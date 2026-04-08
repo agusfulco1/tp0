@@ -4,27 +4,55 @@ t_log* logger;
 
 int iniciar_servidor(void)
 {
-	// Quitar esta línea cuando hayamos terminado de implementar la funcion
-	assert(!"no implementado!");
 
 	int socket_servidor;
 
-	struct addrinfo hints, *servinfo, *p;
+	struct addrinfo hints, *server_info, *p;
+	int err;
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = AI_PASSIVE;
 
-	getaddrinfo(NULL, PUERTO, &hints, &servinfo);
+	err = getaddrinfo(NULL, "4444", &hints, &server_info);
+
+	if (err != 0) {
+        printf("Error en getaddrinfo: %s\n", gai_strerror(err));
+        abort();
+    }
 
 	// Creamos el socket de escucha del servidor
 
+	socket_servidor = socket(server_info->ai_family,
+                         server_info->ai_socktype,
+                         server_info->ai_protocol);
+	if (socket_servidor == -1) {
+        printf("Error creando el socket: %s\n", strerror(errno));
+        freeaddrinfo(server_info);
+        abort();
+    }
 	// Asociamos el socket a un puerto
-
+	err = setsockopt(socket_servidor, SOL_SOCKET, SO_REUSEPORT, &(int){1}, sizeof(int));
+	if (err == -1) {
+        printf("Error en setsockopt: %s\n", strerror(errno));
+        freeaddrinfo(server_info);
+        abort();
+    }
+	err = bind(socket_servidor, server_info->ai_addr, server_info->ai_addrlen);
+	if (err == -1) {
+        printf("Error en bind: %s\n", strerror(errno));
+        freeaddrinfo(server_info);
+        abort();
+    }
 	// Escuchamos las conexiones entrantes
-
-	freeaddrinfo(servinfo);
+	err = listen(socket_servidor, SOMAXCONN);
+	if (err == -1) {
+        printf("Error en listen: %s\n", strerror(errno));
+        freeaddrinfo(server_info);
+        abort();
+    }
+	freeaddrinfo(server_info);
 	log_trace(logger, "Listo para escuchar a mi cliente");
 
 	return socket_servidor;
@@ -32,11 +60,13 @@ int iniciar_servidor(void)
 
 int esperar_cliente(int socket_servidor)
 {
-	// Quitar esta línea cuando hayamos terminado de implementar la funcion
-	assert(!"no implementado!");
 
 	// Aceptamos un nuevo cliente
-	int socket_cliente;
+	int socket_cliente = accept(socket_servidor, NULL, NULL);
+	if (socket_cliente == -1) {
+        log_error(logger, "Error aceptando la conexion: %s", strerror(errno));
+        abort();
+    }
 	log_info(logger, "Se conecto un cliente!");
 
 	return socket_cliente;

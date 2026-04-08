@@ -1,5 +1,5 @@
 #include "utils.h"
-
+#include <errno.h>
 
 void* serializar_paquete(t_paquete* paquete, int bytes)
 {
@@ -20,20 +20,36 @@ int crear_conexion(char *ip, char* puerto)
 {
 	struct addrinfo hints;
 	struct addrinfo *server_info;
-
+	int err;
+	printf("hola1");
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_flags = AI_PASSIVE;
 
-	getaddrinfo(ip, puerto, &hints, &server_info);
-
+	err = getaddrinfo(ip, puerto, &hints, &server_info);
+	printf("hola1");
+	if (err != 0) {
+        printf("Error en getaddrinfo: %s\n", gai_strerror(err));
+        abort();
+    }
 	// Ahora vamos a crear el socket.
 	int socket_cliente = 0;
 
+	socket_cliente = socket(server_info->ai_family,
+                         server_info->ai_socktype,
+                         server_info->ai_protocol);
+	if (socket_cliente == -1) {
+        printf("Error creando el socket: %s\n", strerror(errno));
+        freeaddrinfo(server_info);
+        abort();
+    }
 	// Ahora que tenemos el socket, vamos a conectarlo
-
-
+	err = connect(socket_cliente, server_info->ai_addr, server_info->ai_addrlen);
+	if (err == -1) {
+        printf("Error conectando al servidor: %s\n", strerror(errno));
+        freeaddrinfo(server_info);
+        abort();
+    }
 	freeaddrinfo(server_info);
 
 	return socket_cliente;
@@ -42,7 +58,7 @@ int crear_conexion(char *ip, char* puerto)
 void enviar_mensaje(char* mensaje, int socket_cliente)
 {
 	t_paquete* paquete = malloc(sizeof(t_paquete));
-
+	printf(mensaje);
 	paquete->codigo_operacion = MENSAJE;
 	paquete->buffer = malloc(sizeof(t_buffer));
 	paquete->buffer->size = strlen(mensaje) + 1;
