@@ -21,13 +21,11 @@ int crear_conexion(char *ip, char* puerto)
 	struct addrinfo hints;
 	struct addrinfo *server_info;
 	int err;
-	printf("hola1");
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
 
 	err = getaddrinfo(ip, puerto, &hints, &server_info);
-	printf("hola1");
 	if (err != 0) {
         printf("Error en getaddrinfo: %s\n", gai_strerror(err));
         abort();
@@ -58,7 +56,6 @@ int crear_conexion(char *ip, char* puerto)
 void enviar_mensaje(char* mensaje, int socket_cliente)
 {
 	t_paquete* paquete = malloc(sizeof(t_paquete));
-	printf(mensaje);
 	paquete->codigo_operacion = MENSAJE;
 	paquete->buffer = malloc(sizeof(t_buffer));
 	paquete->buffer->size = strlen(mensaje) + 1;
